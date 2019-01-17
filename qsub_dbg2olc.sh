@@ -19,24 +19,35 @@ MYKVAL=25
 GENOMESIZE=130000000
 #desired coverage 30 is a good value
 COVERAGE=30
-
 ###Do not edit below
+#test for fq or fastq file
+echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
+if [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fastq" ]; then
+      ln -s ${FULLPBREADS} $(basename ${FULLPBREADS} .fastq).u.fastq
+elif [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fq" ]; then
+      ln -s ${FULLPBREADS} $(basename ${FULLPBREADS} .fq).u.fastq
+else
+   echo "please give a fastq input file. run gunzip ${FULLPBREADS} if necessary"
+   exit 1
+fi
+
+#fix here#test for coverage
+MYCOVERAGE=$(($(bioawk -cfastx '{sum+=length($seq)} END {print sum}' $FULLPBREADS)/$GENOMESIZE))
+if [ $MYCOVERAGE <= $COVERAGE ]
+   echo "do something"
+else
+   echo "coverage less that ${COVERAGE}. Coverage = ${MYCOVERAGE}"
+      fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
+      echo "end calculate"
+      sed '/^@/!d;s//>/;N' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
+      PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fasta"
+fi
+#to here
+
 BACKBONERAWFA="backbone_raw.fasta"
 DBG2OLCCONS="DBG2OLC_Consensus_info.txt"
 PREFIX=$(basename ${FULLPBREADS} .fastq)
 PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
-
-if [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fastq" ] || [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fq" ]; then
-   echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
-   ln -s ${FULLPBREADS} $(basename ${FULLPBREADS} .fastq).u.fastq
-   fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
-   echo "end calculate"
-   sed '/^@/!d;s//>/;N' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
-   PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fasta"
-else
-   echo "please give a fastq input file"
-   exit 1
-fi
 
 ###overlap
 ###using contig file as input example
