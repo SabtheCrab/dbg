@@ -20,6 +20,10 @@ GENOMESIZE=130000000
 #desired coverage 30 is a good value
 COVERAGE=30
 ###Do not edit below
+BACKBONERAWFA="backbone_raw.fasta"
+DBG2OLCCONS="DBG2OLC_Consensus_info.txt"
+PREFIX=$(basename ${FULLPBREADS} .fastq)
+PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
 #test for fq or fastq file
 echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
 if [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fastq" ]; then
@@ -33,21 +37,16 @@ fi
 
 #fix here#test for coverage
 MYCOVERAGE=$(($(bioawk -cfastx '{sum+=length($seq)} END {print sum}' $FULLPBREADS)/$GENOMESIZE))
-if [ $MYCOVERAGE <= $COVERAGE ]
-   echo "do something"
-else
+if [ $MYCOVERAGE < $COVERAGE ]
    echo "coverage less that ${COVERAGE}. Coverage = ${MYCOVERAGE}"
-      fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
-      echo "end calculate"
-      sed '/^@/!d;s//>/;N' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
-      PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fasta"
+else
+   echo "Begin calculating longest reads for ${COVERAGE}x coverage"
+   fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
+   echo "end calculate"
 fi
+sed '/^@/!d;s//>/;N' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
+PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fasta"
 #to here
-
-BACKBONERAWFA="backbone_raw.fasta"
-DBG2OLCCONS="DBG2OLC_Consensus_info.txt"
-PREFIX=$(basename ${FULLPBREADS} .fastq)
-PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
 
 ###overlap
 ###using contig file as input example
