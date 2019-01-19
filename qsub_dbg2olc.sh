@@ -6,7 +6,8 @@
 
 #module load blasr/20140724
 module load mchakrab/dbg2olc
-module load smrtanalysis/2.3.0p5 canu/2016-01-13
+module load smrtanalysis/2.3.0p5 
+module load canu/2016-01-13
 
 ##Variables for editing based on assembly
 #platanus contigs
@@ -22,23 +23,26 @@ COVERAGE=30
 ###Do not edit below
 BACKBONERAWFA="backbone_raw.fasta"
 DBG2OLCCONS="DBG2OLC_Consensus_info.txt"
-PREFIX=$(basename ${FULLPBREADS} .fastq)
 PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
 #test for fq or fastq file
-echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
 if [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fastq" ]; then
-      ln -s ${FULLPBREADS} $(basename ${FULLPBREADS} .fastq).u.fastq
+   PREFIX=$(basename ${FULLPBREADS} .fastq)
+   ln -sf ${FULLPBREADS} ${PREFIX}.u.fastq
 elif [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fq" ]; then
-      ln -s ${FULLPBREADS} $(basename ${FULLPBREADS} .fq).u.fastq
+   PREFIX=$(basename ${FULLPBREADS} .fq)
+   ln -sf ${FULLPBREADS} ${PREFIX}.u.fastq
 else
    echo "please give a fastq input file. run gunzip ${FULLPBREADS} if necessary"
    exit 1
 fi
 
-#fix here#test for coverage
+FULLPBREADS=${PREFIX}.u.fastq
+#test for coverage
+echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
 MYCOVERAGE=$(($(bioawk -cfastx '{sum+=length($seq)} END {print sum}' $FULLPBREADS)/$GENOMESIZE))
-if [ $MYCOVERAGE < $COVERAGE ]
+if [ $MYCOVERAGE -lt $COVERAGE ]; then
    echo "coverage less that ${COVERAGE}. Coverage = ${MYCOVERAGE}"
+   ln -sf ${PREFIX}.u.fastq ${PREFIX}_${COVERAGE}x.u.fastq
 else
    echo "Begin calculating longest reads for ${COVERAGE}x coverage"
    fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
