@@ -5,6 +5,7 @@
 #$ -q bio
 
 #module load blasr/20140724
+module load jje/jjeutils/0.1a
 module load mchakrab/dbg2olc
 module load smrtanalysis/2.3.0p5 
 module load canu/2016-01-13
@@ -13,7 +14,7 @@ module load canu/2016-01-13
 #platanus contigs
 CONTIGFILE="iso1.pool_contig.fa"
 #raw reads long reads
-FULLPBREADS="iso1_onp_a2_1kb.fastq"
+FULLPBREADS="chardonnay.fq"
 #kmer value from canu
 MYKVAL=25
 #expected genome size
@@ -40,15 +41,15 @@ FULLPBREADS=${PREFIX}.u.fastq
 #test for coverage
 echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
 MYCOVERAGE=$(($(bioawk -cfastx '{sum+=length($seq)} END {print sum}' $FULLPBREADS)/$GENOMESIZE))
-if [ $MYCOVERAGE -lt $COVERAGE ]; then
+if [ $MYCOVERAGE -gt $COVERAGE ]; then
    echo "coverage less that ${COVERAGE}. Coverage = ${MYCOVERAGE}"
-   ln -sf ${PREFIX}.u.fastq ${PREFIX}_${COVERAGE}x.u.fastq
+   ln -sf ${PREFIX}.u.fastq ${PACBIOREADS}
 else
    echo "Begin calculating longest reads for ${COVERAGE}x coverage"
    fastqSample -I ${PREFIX} -U -O ${PREFIX}_${COVERAGE}x -max -g ${GENOMESIZE} -c ${COVERAGE}
    echo "end calculate"
 fi
-sed '/^@/!d;s//>/;N' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
+bioawk -cfastx '{print ">"$name"\n"$seq}' ${PACBIOREADS} > $(basename ${PACBIOREADS} .fastq).fasta
 PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fasta"
 #to here
 
@@ -101,4 +102,11 @@ split_and_run_pbdagcon.sh backbone_raw.fasta DBG2OLC_Consensus_info.txt \
     ./consensus_dir 2>cns_log.err 1>cns_log.out
 echo "end dbg2olc step 2 consensus"
 
-cp consensus_dir/final_assembly.fasta ./${PREFIX}_${COVERAGE}x_LD${MYLD}_K${MYKVAL}_KCOV${MYKMERCOV}_ADAPT${MYADAPT}_MINOVL${MYMINOVL}_RMCHIM${MYRMCH}_asm.fasta
+#test if consensus fasta file exists
+if [ -f consensus_dir/final_assembly.fasta ]
+then
+   cp consensus_dir/final_assembly.fasta ./${PREFIX}_${COVERAGE}x_LD${MYLD}_K${MYKVAL}_KCOV${MYKMERCOV}_ADAPT${MYADAPT}_MINOVL${MYMINOVL}_RMCHIM${MYRMCH}_asm.fasta
+else
+   echo "Consensus failed. consensus_dir/final_assembly.fasta does not exist. Please check for errors and rerun script"
+   exit 1
+fi
