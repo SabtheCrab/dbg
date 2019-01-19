@@ -41,7 +41,7 @@ FULLPBREADS=${PREFIX}.u.fastq
 #test for coverage
 echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
 MYCOVERAGE=$(($(bioawk -cfastx '{sum+=length($seq)} END {print sum}' $FULLPBREADS)/$GENOMESIZE))
-if [ $MYCOVERAGE -gt $COVERAGE ]; then
+if [ $MYCOVERAGE -lt $COVERAGE ]; then
    echo "coverage less that ${COVERAGE}. Coverage = ${MYCOVERAGE}"
    ln -sf ${PREFIX}.u.fastq ${PACBIOREADS}
 else
