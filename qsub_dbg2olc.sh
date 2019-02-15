@@ -24,7 +24,6 @@ COVERAGE=30
 ###Do not edit below
 BACKBONERAWFA="backbone_raw.fasta"
 DBG2OLCCONS="DBG2OLC_Consensus_info.txt"
-PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
 #test for fq or fastq file
 if [ $(echo ${FULLPBREADS} | awk -F . '{print $NF}') = "fastq" ]; then
    PREFIX=$(basename ${FULLPBREADS} .fastq)
@@ -36,7 +35,7 @@ else
    echo "please give a fastq input file. run gunzip ${FULLPBREADS} if necessary"
    exit 1
 fi
-
+PACBIOREADS="${PREFIX}_${COVERAGE}x.u.fastq"
 FULLPBREADS=${PREFIX}.u.fastq
 #test for coverage
 echo "calculate top ${COVERAGE}x for genomesize: ${GENOMESIZE} for ${PREFIX}"
